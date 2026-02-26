@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const ABILITIES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 
@@ -91,8 +91,23 @@ function evaluate(scores) {
 export default function Page() {
   const [scores, setScores] = useState(INITIAL_SCORES);
   const [hint, setHint] = useState("");
+  const [showCosts, setShowCosts] = useState(true);
+  const [showActiveCurses, setShowActiveCurses] = useState(true);
 
   const state = useMemo(() => evaluate(scores), [scores]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 640px)");
+    const applyViewportMode = () => {
+      const mobile = mediaQuery.matches;
+      setShowCosts(!mobile);
+      setShowActiveCurses(!mobile);
+    };
+
+    applyViewportMode();
+    mediaQuery.addEventListener("change", applyViewportMode);
+    return () => mediaQuery.removeEventListener("change", applyViewportMode);
+  }, []);
 
   function trySet(ability, value) {
     if (value < 6 || value > 16) {
@@ -110,125 +125,219 @@ export default function Page() {
     setScores(nextScores);
   }
 
-  function getCurse(ability, value) {
-    return value <= 7 ? CURSES[ability][value] : "";
+  function getCurses(ability, value) {
+    if (value === 7) {
+      return [{ trigger: 7, text: CURSES[ability][7] }];
+    }
+
+    if (value === 6) {
+      return [
+        { trigger: 7, text: CURSES[ability][7] },
+        { trigger: 6, text: CURSES[ability][6] }
+      ];
+    }
+
+    return [];
   }
 
-  const activeCurses = ABILITIES.filter((ability) => scores[ability] <= 7).map((ability) => ({
-    ability,
-    score: scores[ability],
-    text: CURSES[ability][scores[ability]]
-  }));
+  const activeCurses = ABILITIES.flatMap((ability) => {
+    const value = scores[ability];
+    return getCurses(ability, value).map((curse) => ({
+      ability,
+      score: value,
+      trigger: curse.trigger,
+      text: curse.text
+    }));
+  });
 
   return (
-    <main className="page">
-      <section className="panel">
-        <h1>Hybrid Point Buy</h1>
-        <p className="subline">27 Punkte, Min 6 / Max 16, max. 1x 16, max. 2 Werte unter 8.</p>
-        <ul className="rule-list">
-          <li>Budget: 27 Punkte.</li>
-          <li>Attributswerte vor Boni: Min 6, Max 16.</li>
-          <li>Maximal ein Attribut darf 16 sein.</li>
-          <li>Maximal zwei Attribute dürfen unter 8 liegen.</li>
-          <li>Wert 6 oder 7 aktiviert einen Curse.</li>
-        </ul>
-
-        <div className="stats">
-          <article>
-            <span>Verbrauchte Punkte</span>
-            <strong>{state.totalCost}</strong>
-          </article>
-          <article>
-            <span>Verbleibend</span>
-            <strong>{state.remaining}</strong>
-          </article>
-          <article>
-            <span>Werte &lt; 8</span>
-            <strong>
-              {state.below8} / 2
-            </strong>
-          </article>
-          <article>
-            <span>Wert 16</span>
-            <strong>
-              {state.count16} / 1
-            </strong>
-          </article>
+    <div className="site-shell">
+      <header className="site-header">
+        <div className="brand-block">
+          <p className="brand-kicker">Hybrid Point Buy</p>
+          <p className="brand">Character Builder</p>
         </div>
+        <button type="button" className="ghost-btn" onClick={() => setScores(INITIAL_SCORES)}>
+          Reset
+        </button>
+      </header>
 
-        {hint ? <p className="error">{hint}</p> : null}
-
-        <div className="grid">
-          {ABILITIES.map((ability) => {
-            const value = scores[ability];
-            const curse = getCurse(ability, value);
-            return (
-              <article key={ability} className="ability-card">
-                <header>
-                  <h2>{ability}</h2>
-                  <small>{LABELS[ability]}</small>
-                </header>
-                <div className="controls">
-                  <button type="button" onClick={() => trySet(ability, value - 1)} disabled={value <= 6}>
-                    -
-                  </button>
-                  <div className="value">
-                    <strong>{value}</strong>
-                    <span>Mod {scoreModifier(value)}</span>
-                    <span>Kosten {COSTS[value] >= 0 ? `+${COSTS[value]}` : COSTS[value]}</span>
-                  </div>
-                  <button type="button" onClick={() => trySet(ability, value + 1)} disabled={value >= 16}>
-                    +
-                  </button>
-                </div>
-                <p className={curse ? "curse" : "no-curse"}>{curse || "Kein Curse aktiv."}</p>
-              </article>
-            );
-          })}
-        </div>
-
-        <div className="actions">
-          <button type="button" onClick={() => setScores(INITIAL_SCORES)}>
-            Reset auf 8/8/8/8/8/8
-          </button>
-        </div>
-
-        <section className="rules">
-          <h2>Kosten</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Wert</th>
-                <th>Kosten</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(COSTS).map(([score, cost]) => (
-                <tr key={score}>
-                  <td>{score}</td>
-                  <td>{cost >= 0 ? `+${cost}` : cost}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <h2>Aktive Curses</h2>
-          {activeCurses.length === 0 ? (
-            <p>Keine Curses aktiv.</p>
-          ) : (
-            <ul>
-              {activeCurses.map((entry) => (
-                <li key={`${entry.ability}-${entry.score}`}>
-                  <strong>
-                    {entry.ability} {entry.score}:
-                  </strong>{" "}
-                  {entry.text}
-                </li>
-              ))}
-            </ul>
-          )}
+      <main className="page">
+        <section className="hero">
+          <div className="hero-copy">
+            <p className="hero-kicker">Simple, Lean, Playable</p>
+            <h1>Build your stats in seconds</h1>
+            <p className="subline">
+              27 Punkte, Min 6 / Max 16 (vor Boni), max. 1x 16, max. 2 Werte unter 8.
+            </p>
+          </div>
+          <div className="hero-metrics">
+            <article className="hero-chip">
+              <span>Remaining</span>
+              <strong>{state.remaining}</strong>
+            </article>
+            <article className="hero-chip hero-chip-soft">
+              <span>Spent</span>
+              <strong>{state.totalCost}</strong>
+            </article>
+          </div>
         </section>
-      </section>
-    </main>
+
+        <section className="panel">
+          <div className="rule-list">
+            <span>27 Punkte</span>
+            <span>Min 6 / Max 16</span>
+            <span>Max 1x 16</span>
+            <span>Max 2 Werte unter 8</span>
+            <span>6 = Curse 7 + 6</span>
+          </div>
+
+          <div className="stats">
+            <article>
+              <span>Verbrauchte Punkte</span>
+              <strong>{state.totalCost}</strong>
+            </article>
+            <article>
+              <span>Verbleibend</span>
+              <strong>{state.remaining}</strong>
+            </article>
+            <article>
+              <span>Werte &lt; 8</span>
+              <strong>
+                {state.below8} / 2
+              </strong>
+            </article>
+            <article>
+              <span>Wert 16</span>
+              <strong>
+                {state.count16} / 1
+              </strong>
+            </article>
+          </div>
+
+          {hint ? <p className="error">{hint}</p> : null}
+
+          <div className="grid">
+            {ABILITIES.map((ability) => {
+              const value = scores[ability];
+              const curses = getCurses(ability, value);
+              return (
+                <article key={ability} className="ability-card">
+                  <header>
+                    <h2>{ability}</h2>
+                    <small>{LABELS[ability]}</small>
+                  </header>
+                  <div className="controls">
+                    <button
+                      className="icon-btn"
+                      type="button"
+                      onClick={() => trySet(ability, value - 1)}
+                      disabled={value <= 6}
+                    >
+                      -
+                    </button>
+                    <div className="value">
+                      <strong>{value}</strong>
+                      <span>Mod {scoreModifier(value)}</span>
+                      <span>Kosten {COSTS[value] >= 0 ? `+${COSTS[value]}` : COSTS[value]}</span>
+                    </div>
+                    <button
+                      className="icon-btn"
+                      type="button"
+                      onClick={() => trySet(ability, value + 1)}
+                      disabled={value >= 16}
+                    >
+                      +
+                    </button>
+                  </div>
+                  {curses.length === 0 ? (
+                    <p className="no-curse">Kein Curse aktiv.</p>
+                  ) : (
+                    <div className="curse">
+                      <ul>
+                        {curses.map((curse) => (
+                          <li key={`${ability}-${curse.trigger}`}>{curse.text}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="actions">
+            <button type="button" onClick={() => setScores(INITIAL_SCORES)}>
+              Reset auf 8
+            </button>
+          </div>
+
+          <section className="rules">
+            <section className="rules-block">
+              <div className="rules-head">
+                <h2>Kosten</h2>
+                <button
+                  type="button"
+                  className="toggle-btn"
+                  onClick={() => setShowCosts((prev) => !prev)}
+                  aria-expanded={showCosts}
+                >
+                  {showCosts ? "Ausblenden" : "Einblenden"}
+                </button>
+              </div>
+              {showCosts ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Wert</th>
+                      <th>Kosten</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(COSTS).map(([score, cost]) => (
+                      <tr key={score}>
+                        <td>{score}</td>
+                        <td>{cost >= 0 ? `+${cost}` : cost}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : null}
+            </section>
+
+            <section className="rules-block">
+              <div className="rules-head">
+                <h2>Aktive Curses</h2>
+                <button
+                  type="button"
+                  className="toggle-btn"
+                  onClick={() => setShowActiveCurses((prev) => !prev)}
+                  aria-expanded={showActiveCurses}
+                >
+                  {showActiveCurses ? "Ausblenden" : "Einblenden"}
+                </button>
+              </div>
+
+              {showActiveCurses ? (
+                activeCurses.length === 0 ? (
+                  <p>Keine Curses aktiv.</p>
+                ) : (
+                  <ul>
+                    {activeCurses.map((entry) => (
+                      <li key={`${entry.ability}-${entry.score}-${entry.trigger}`}>
+                        <strong>
+                          {entry.ability} {entry.score} (Curse {entry.trigger}):
+                        </strong>{" "}
+                        {entry.text}
+                      </li>
+                    ))}
+                  </ul>
+                )
+              ) : null}
+            </section>
+          </section>
+        </section>
+      </main>
+    </div>
   );
 }

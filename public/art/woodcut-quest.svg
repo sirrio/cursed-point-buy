@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" role="img" aria-label="Stylized fantasy woodcut illustration">
+  <defs>
+    <linearGradient id="bg2" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#461118"/>
+      <stop offset="100%" stop-color="#1f080b"/>
+    </linearGradient>
+    <pattern id="hatch" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(25)">
+      <line x1="0" y1="0" x2="0" y2="16" stroke="#a26f44" stroke-width="2" opacity="0.16"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="1200" fill="url(#bg2)"/>
+  <rect width="800" height="1200" fill="url(#hatch)"/>
+  <path d="M83 981L139 921L197 981L185 1049L95 1049Z" fill="#f0ca8a"/>
+  <path d="M601 922L659 856L717 922L705 1014L612 1014Z" fill="#f0ca8a"/>
+  <path d="M176 1019C176 833 263 703 401 703C537 703 626 833 626 1019Z" fill="#f0ca8a"/>
+  <circle cx="401" cy="566" r="86" fill="#f0ca8a"/>
+  <circle cx="401" cy="566" r="44" fill="#2d0e12"/>
+  <path d="M401 478L432 421L493 421L447 489Z" fill="#f0ca8a"/>
+  <path d="M401 478L370 421L307 421L355 489Z" fill="#f0ca8a"/>
+  <path d="M327 640H475L451 704H351Z" fill="#2d0e12"/>
+  <path d="M273 1037C274 968 323 919 382 919C441 919 492 968 493 1037" stroke="#2d0e12" stroke-width="21" fill="none"/>
+  <path d="M86 1086H719" stroke="#be8a52" stroke-width="8" stroke-linecap="round"/>
+</svg>
+

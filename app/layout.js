@@ -2,7 +2,10 @@ import "./globals.css";
 
 export const metadata = {
   title: "Hybrid Point Buy",
-  description: "D&D Hybrid Point Buy Rechner mit Curse-Regeln"
+  description: "D&D Hybrid Point Buy Rechner mit Curse-Regeln",
+  icons: {
+    icon: "/favicon.svg"
+  }
 };
 
 export default function RootLayout({ children }) {
@@ -12,4 +15,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-
