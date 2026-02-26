@@ -29,28 +29,64 @@ const COSTS = {
 
 const CURSES = {
   STR: {
-    7: "Traglast (Carry Weight) halbiert. Schwache Muskulatur; z. B. dünne Arme und schnelle Erschöpfung beim Tragen.",
-    6: "Bewegungsrate dauerhaft -5 ft. Hinkender Gang; z. B. altes Knieleiden oder schlecht verheilter Bruch."
+    7: {
+      impact: "Traglast (Carry Weight) halbiert.",
+      flavor: "Schwache Muskulatur; z. B. dünne Arme und schnelle Erschöpfung beim Tragen."
+    },
+    6: {
+      impact: "Bewegungsrate dauerhaft -5 ft.",
+      flavor: "Hinkender Gang; z. B. altes Knieleiden oder schlecht verheilter Bruch."
+    }
   },
   DEX: {
-    7: "Armor Class -1. Ungelenke Bewegungen; z. B. schlechte Haltung oder fehlende Feinmotorik.",
-    6: "-3 auf Initiativewürfe. Verzögerte Reaktion; z. B. Zittern oder langsames Erfassen der Lage."
+    7: {
+      impact: "Armor Class -1.",
+      flavor: "Ungelenke Bewegungen; z. B. schlechte Haltung oder fehlende Feinmotorik."
+    },
+    6: {
+      impact: "-3 auf Initiativewürfe.",
+      flavor: "Verzögerte Reaktion; z. B. Zittern oder langsames Erfassen der Lage."
+    }
   },
   CON: {
-    7: "Hit Dice zählen als W4 (nicht für MaxHP). Schwache Regeneration; z. B. blasse Haut und schnelle Ermüdung.",
-    6: "Death Saves erst ab 12 erfolgreich. Gebrechlicher Körper; z. B. Atemprobleme oder schwaches Herz."
+    7: {
+      impact: "Hit Dice zählen als W4 (nicht für MaxHP).",
+      flavor: "Schwache Regeneration; z. B. blasse Haut und schnelle Ermüdung."
+    },
+    6: {
+      impact: "Death Saves erst ab 12 erfolgreich.",
+      flavor: "Gebrechlicher Körper; z. B. Atemprobleme oder schwaches Herz."
+    }
   },
   INT: {
-    7: "INT-Proficiencies werden Half Proficiency, Expertise wird normale Proficiency. Lückenhafte Bildung; z. B. fehlende Grundlagen oder Denkpausen.",
-    6: "Mindest-DC für Concentration-Checks ist 12. Überforderung; z. B. Migräne bei starker geistiger Anstrengung."
+    7: {
+      impact: "INT-Proficiencies werden Half Proficiency, Expertise wird normale Proficiency.",
+      flavor: "Lückenhafte Bildung; z. B. fehlende Grundlagen oder Denkpausen."
+    },
+    6: {
+      impact: "Mindest-DC für Concentration-Checks ist 12.",
+      flavor: "Überforderung; z. B. Migräne bei starker geistiger Anstrengung."
+    }
   },
   WIS: {
-    7: "Passive Perception -3. Unaufmerksam; z. B. abwesender Blick oder leicht ablenkbar.",
-    6: "Keine Opportunity Attacks. Späte Gefahrenerkennung; z. B. reagiert erst, wenn es schon zu spät ist."
+    7: {
+      impact: "Passive Perception -3.",
+      flavor: "Unaufmerksam; z. B. abwesender Blick oder leicht ablenkbar."
+    },
+    6: {
+      impact: "Keine Opportunity Attacks.",
+      flavor: "Späte Gefahrenerkennung; z. B. reagiert erst, wenn es schon zu spät ist."
+    }
   },
   CHA: {
-    7: "Keine Help-Aktion. Unsichere Ausstrahlung; z. B. nervöse Stimme oder fehlender Blickkontakt.",
-    6: "Melee-Angriffe gegen dich critten bei 19-20. Lesbare Körpersprache; z. B. offenkundige Anspannung im Kampf."
+    7: {
+      impact: "Keine Help-Aktion.",
+      flavor: "Unsichere Ausstrahlung; z. B. nervöse Stimme oder fehlender Blickkontakt."
+    },
+    6: {
+      impact: "Melee-Angriffe gegen dich critten bei 19-20.",
+      flavor: "Lesbare Körpersprache; z. B. offenkundige Anspannung im Kampf."
+    }
   }
 };
 
@@ -91,7 +127,6 @@ function evaluate(scores) {
 export default function Page() {
   const [scores, setScores] = useState(INITIAL_SCORES);
   const [hint, setHint] = useState("");
-  const [showCosts, setShowCosts] = useState(true);
   const [showActiveCurses, setShowActiveCurses] = useState(true);
 
   const state = useMemo(() => evaluate(scores), [scores]);
@@ -100,7 +135,6 @@ export default function Page() {
     const mediaQuery = window.matchMedia("(max-width: 640px)");
     const applyViewportMode = () => {
       const mobile = mediaQuery.matches;
-      setShowCosts(!mobile);
       setShowActiveCurses(!mobile);
     };
 
@@ -127,13 +161,13 @@ export default function Page() {
 
   function getCurses(ability, value) {
     if (value === 7) {
-      return [{ trigger: 7, text: CURSES[ability][7] }];
+      return [{ trigger: 7, ...CURSES[ability][7] }];
     }
 
     if (value === 6) {
       return [
-        { trigger: 7, text: CURSES[ability][7] },
-        { trigger: 6, text: CURSES[ability][6] }
+        { trigger: 7, ...CURSES[ability][7] },
+        { trigger: 6, ...CURSES[ability][6] }
       ];
     }
 
@@ -146,7 +180,8 @@ export default function Page() {
       ability,
       score: value,
       trigger: curse.trigger,
-      text: curse.text
+      impact: curse.impact,
+      flavor: curse.flavor
     }));
   });
 
@@ -154,8 +189,7 @@ export default function Page() {
     <div className="site-shell">
       <header className="site-header">
         <div className="brand-block">
-          <p className="brand-kicker">Hybrid Point Buy</p>
-          <p className="brand">Character Builder</p>
+          <p className="brand">Hybrid Point Buy</p>
         </div>
         <button type="button" className="ghost-btn" onClick={() => setScores(INITIAL_SCORES)}>
           Reset
@@ -163,35 +197,7 @@ export default function Page() {
       </header>
 
       <main className="page">
-        <section className="hero">
-          <div className="hero-copy">
-            <p className="hero-kicker">Simple, Lean, Playable</p>
-            <h1>Build your stats in seconds</h1>
-            <p className="subline">
-              27 Punkte, Min 6 / Max 16 (vor Boni), max. 1x 16, max. 2 Werte unter 8.
-            </p>
-          </div>
-          <div className="hero-metrics">
-            <article className="hero-chip">
-              <span>Remaining</span>
-              <strong>{state.remaining}</strong>
-            </article>
-            <article className="hero-chip hero-chip-soft">
-              <span>Spent</span>
-              <strong>{state.totalCost}</strong>
-            </article>
-          </div>
-        </section>
-
         <section className="panel">
-          <div className="rule-list">
-            <span>27 Punkte</span>
-            <span>Min 6 / Max 16</span>
-            <span>Max 1x 16</span>
-            <span>Max 2 Werte unter 8</span>
-            <span>6 = Curse 7 + 6</span>
-          </div>
-
           <div className="stats">
             <article>
               <span>Verbrauchte Punkte</span>
@@ -256,7 +262,11 @@ export default function Page() {
                     <div className="curse">
                       <ul>
                         {curses.map((curse) => (
-                          <li key={`${ability}-${curse.trigger}`}>{curse.text}</li>
+                          <li key={`${ability}-${curse.trigger}`} className="curse-item">
+                            <span className="curse-label">Curse {curse.trigger} Impact</span>
+                            <span className="curse-impact">{curse.impact}</span>
+                            <span className="curse-flavor">Flavor: {curse.flavor}</span>
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -266,45 +276,7 @@ export default function Page() {
             })}
           </div>
 
-          <div className="actions">
-            <button type="button" onClick={() => setScores(INITIAL_SCORES)}>
-              Reset auf 8
-            </button>
-          </div>
-
           <section className="rules">
-            <section className="rules-block">
-              <div className="rules-head">
-                <h2>Kosten</h2>
-                <button
-                  type="button"
-                  className="toggle-btn"
-                  onClick={() => setShowCosts((prev) => !prev)}
-                  aria-expanded={showCosts}
-                >
-                  {showCosts ? "Ausblenden" : "Einblenden"}
-                </button>
-              </div>
-              {showCosts ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Wert</th>
-                      <th>Kosten</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(COSTS).map(([score, cost]) => (
-                      <tr key={score}>
-                        <td>{score}</td>
-                        <td>{cost >= 0 ? `+${cost}` : cost}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : null}
-            </section>
-
             <section className="rules-block">
               <div className="rules-head">
                 <h2>Aktive Curses</h2>
@@ -322,19 +294,40 @@ export default function Page() {
                 activeCurses.length === 0 ? (
                   <p>Keine Curses aktiv.</p>
                 ) : (
-                  <ul>
+                  <ul className="active-curse-list">
                     {activeCurses.map((entry) => (
-                      <li key={`${entry.ability}-${entry.score}-${entry.trigger}`}>
+                      <li key={`${entry.ability}-${entry.score}-${entry.trigger}`} className="active-curse-item">
                         <strong>
                           {entry.ability} {entry.score} (Curse {entry.trigger}):
                         </strong>{" "}
-                        {entry.text}
+                        <span className="active-curse-impact">{entry.impact}</span>
+                        <span className="active-curse-flavor">Flavor: {entry.flavor}</span>
                       </li>
                     ))}
                   </ul>
                 )
               ) : null}
             </section>
+
+            <details className="cost-reference">
+              <summary>Point Cost Reference</summary>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Wert</th>
+                    <th>Kosten</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(COSTS).map(([score, cost]) => (
+                    <tr key={score}>
+                      <td>{score}</td>
+                      <td>{cost >= 0 ? `+${cost}` : cost}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
           </section>
         </section>
       </main>
